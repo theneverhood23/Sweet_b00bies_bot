@@ -21,6 +21,7 @@ TRIGGER_PHRASE_BOOBS = "скинь сиськи"
 ## ДОБАВЛЕНО: Новая триггер-фраза
 TRIGGER_PHRASE_DICK = "скинь член"
 
+TRIGGER_PHRASE_PIZDA = "пизда"
 
 # URL API для получения картинок
 IMAGE_API_URL = "http://api.oboobs.ru/boobs/0/1/random"
@@ -74,6 +75,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif TRIGGER_PHRASE_DICK in message_text:
         logger.info(f"Триггер 'член' сработал в чате {update.message.chat.id}")
         await update.message.reply_text("Ти пидор, да?")
+
+    elif TRIGGER_PHRASE_PIZDA in message_text:
+        logger.info(f"Триггер 'пизда' сработал в чате {update.message.chat.id}")
+        await update.message.reply_text("ну и да")
 
 
 def main() -> None:
