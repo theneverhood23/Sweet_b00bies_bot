@@ -15,10 +15,6 @@ logger = logging.getLogger(__name__)
 # Попробуем загрузить стандартный .env; если токен не найден, попробуем специфичный файл
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
-if not TOKEN:
-    # Попробовать альтернативное имя файла, чтобы не требовать переименования у пользователя
-    load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), 'Sweet_b00bies_bot.env'))
-    TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # Триггер-фразы, на которые будет реагировать бот (приводим к нижнему регистру)
 TRIGGER_PHRASE_BOOBS = "скинь сиськи"
