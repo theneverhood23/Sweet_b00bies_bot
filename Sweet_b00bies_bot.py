@@ -1,6 +1,7 @@
 import os
 import logging
 import requests
+import random
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -20,6 +21,7 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 TRIGGER_PHRASE_BOOBS = "скинь сиськи"
 ## ДОБАВЛЕНО: Новая триггер-фраза
 TRIGGER_PHRASE_DICK = "скинь член"
+TRIGGER_PHRASE_BASH = "скинь ржаку"
 
 TRIGGER_PHRASE_PIZDA = "пизда"
 
@@ -45,6 +47,25 @@ def get_random_boobs_url():
         logger.error(f"Неожиданный формат ответа от API: {e}")
         
     return None
+
+quotes_cache = []
+
+def get_random_quote():
+    """Загружает цитаты из файла (если нужно) и возвращает случайную."""
+    global quotes_cache
+    # Если кэш пуст, читаем файл
+    if not quotes_cache:
+        try:
+            with open('quotes.txt', 'r', encoding='utf-8') as f:
+                # Читаем весь файл и делим по нашему специальному разделителю
+                quotes_cache = f.read().split('\n%%%\n')
+            logger.info(f"Загружено в кэш {len(quotes_cache)} цитат.")
+        except FileNotFoundError:
+            logger.error("Файл quotes.txt не найден!")
+            return "Ой, я потерял свои цитаты. :("
+    
+    # Выбираем случайную цитату из кэша
+    return random.choice(quotes_cache)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /start."""
@@ -79,6 +100,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif TRIGGER_PHRASE_PIZDA in message_text:
         logger.info(f"Триггер 'пизда' сработал в чате {update.message.chat.id}")
         await update.message.reply_text("ну и да")
+        
+    elif TRIGGER_PHRASE_BASH in message_text:
+        logger.info(f"Триггер 'ржака' сработал в чате {update.message.chat.id}")
+        quote = get_random_quote()
+        await update.message.reply_text(quote)
 
 
 def main() -> None:
