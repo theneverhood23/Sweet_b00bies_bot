@@ -74,7 +74,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     ## ДОБАВЛЕНО: Новый блок для обработки второй триггер-фразы
     elif TRIGGER_PHRASE_DICK in message_text:
         logger.info(f"Триггер 'член' сработал в чате {update.message.chat.id}")
-        await update.message.reply_text("Ти пидор, да?")
+        await update.message.reply_text("Ти пидор, да ?")
 
     elif TRIGGER_PHRASE_PIZDA in message_text:
         logger.info(f"Триггер 'пизда' сработал в чате {update.message.chat.id}")
