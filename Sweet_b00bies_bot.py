@@ -130,6 +130,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not update.message or not update.message.text:
         return
         
+
     message_text = update.message.text.lower().strip()
     
     
@@ -156,7 +157,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif TRIGGER_PHRASE_BASH in message_text:
         logger.info(f"Триггер 'ржака' сработал в чате {update.message.chat.id}")
         quote = get_random_quote()
-        quote = re.sub(r"(?i)<br\s*/?>", "**", quote)
         await update.message.reply_text(quote)
 
     elif TRIGGER_PHRASE_BANYA in message_text:
@@ -164,6 +164,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif TRIGGER_PHRASE_ASS in message_text:
         await update.message.reply_text("ты ебобо? мож тебе еще денег скинуть на карту?")
+
+    elif "хде я" in message_text:
+        await update.message.reply_text(update.message.chat_id)
+
+    elif "хто я" in message_text:
+        await update.message.reply_text(update.message.chat.full_name)
 
     elif random.random() < 0.2:
          await update.message.reply_text(insultify_last_word(message_text, use_yo=True))
