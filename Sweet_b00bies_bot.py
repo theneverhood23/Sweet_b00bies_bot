@@ -157,7 +157,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(quote)
 
     elif random.random() < 0.7:
-         await update.message.reply_text(insultify_last_word(text, use_yo=True))
+         await update.message.reply_text(insultify_last_word(message_text, use_yo=True))
 
 
 def main() -> None:
