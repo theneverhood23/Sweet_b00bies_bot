@@ -1,6 +1,7 @@
 import os
 import logging
 import requests
+import re
 import random
 from dotenv import load_dotenv
 from telegram import Update
@@ -28,6 +29,54 @@ TRIGGER_PHRASE_PIZDA = "пизда"
 # URL API для получения картинок
 IMAGE_API_URL = "http://api.oboobs.ru/boobs/0/1/random"
 IMAGE_BASE_URL = "http://media.oboobs.ru/"
+
+VOWELS = "аеёиоуыэюя"
+MAP = {
+    "а": "хуя", "я": "хуя",
+    "э": "хуе", "е": "хуе",
+    "ы": "хуи", "и": "хуи",
+    "о": "хуё", "ё": "хуё",
+    "у": "хую", "ю": "хую",
+}
+
+def _match_case(prefix: str, word: str) -> str:
+    if word.isupper():
+        return prefix.upper()
+    if word[:1].isupper():
+        return prefix.capitalize()
+    return prefix
+
+def insultify_word(word: str, use_yo: bool = True) -> str:
+    idx = None
+    for i, ch in enumerate(word):
+        lo = ch.lower()
+        if lo in VOWELS:
+            idx = i
+            v = lo
+            break
+    if idx is None:
+        return word
+
+    prefix = MAP[v]
+    if not use_yo and v in ("о", "ё"):
+        prefix = "хуе"
+
+    prefix = _match_case(prefix, word)
+    rest = word[idx+1:]
+    return prefix + rest
+
+WORD_RE = re.compile(r"[А-Яа-яЁё]+")
+
+def insultify_last_word(text: str, use_yo: bool = True) -> str:
+    last_match = None
+    for m in WORD_RE.finditer(text):
+        last_match = m
+    if not last_match:
+        return text
+    w = last_match.group(0)
+    new_w = insultify_word(w, use_yo=use_yo)
+    return new_w + text[last_match.end():]
+
 
 def get_random_boobs_url():
     """Делает запрос к API и возвращает URL картинки."""
@@ -81,6 +130,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         
     message_text = update.message.text.lower().strip()
     
+    
     ## ИЗМЕНЕНО: Добавляем проверку на вторую фразу через elif (else if)
     if TRIGGER_PHRASE_BOOBS in message_text:
         logger.info(f"Триггер 'сиськи' сработал в чате {update.message.chat.id}")
@@ -105,6 +155,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         logger.info(f"Триггер 'ржака' сработал в чате {update.message.chat.id}")
         quote = get_random_quote()
         await update.message.reply_text(quote)
+
+    if random.random() < 0.7:
+         await update.message.reply_text(insultify_last_word(text, use_yo=True))
 
 
 def main() -> None:
