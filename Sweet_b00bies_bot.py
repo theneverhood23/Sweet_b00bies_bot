@@ -24,6 +24,7 @@ TRIGGER_PHRASE_BOOBS = "скинь сиськи"
 TRIGGER_PHRASE_DICK = "скинь член"
 TRIGGER_PHRASE_BASH = "скинь ржаку"
 TRIGGER_PHRASE_BANYA = "когда в баню"
+TRIGGER_PHRASE_ASS = "скинь попку"
 
 TRIGGER_PHRASE_PIZDA = "пизда"
 
@@ -160,6 +161,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     elif TRIGGER_PHRASE_BANYA in message_text:
         await update.message.reply_text("джуджулка выросла что ли? похвастаться хочешь?")
+
+    elif TRIGGER_PHRASE_ASS in message_text:
+        await update.message.reply_text("ты ебобо? мож тебе еще денег скинуть на карту?")
 
     elif random.random() < 0.2:
          await update.message.reply_text(insultify_last_word(message_text, use_yo=True))
