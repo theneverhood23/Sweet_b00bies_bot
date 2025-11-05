@@ -23,6 +23,7 @@ TRIGGER_PHRASE_BOOBS = "скинь сиськи"
 ## ДОБАВЛЕНО: Новая триггер-фраза
 TRIGGER_PHRASE_DICK = "скинь член"
 TRIGGER_PHRASE_BASH = "скинь ржаку"
+TRIGGER_PHRASE_BANYA = "когда в баню"
 
 TRIGGER_PHRASE_PIZDA = "пизда"
 
@@ -155,6 +156,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         logger.info(f"Триггер 'ржака' сработал в чате {update.message.chat.id}")
         quote = get_random_quote()
         await update.message.reply_text(quote)
+
+    elif TRIGGER_PHRASE_BANYA in message_text:
+        await update.message.reply_text("мб лучше в сахар?")
 
     elif random.random() < 0.2:
          await update.message.reply_text(insultify_last_word(message_text, use_yo=True))
