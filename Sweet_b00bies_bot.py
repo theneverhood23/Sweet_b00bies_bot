@@ -169,8 +169,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(update.message.chat_id)
 
     elif "хто я" in message_text:
-        await update.message.reply_text(update.message.chat.full_name)
-
+        await update.message.reply_text(update.message.from_user.full_name)
+    
     elif random.random() < 0.2:
          await update.message.reply_text(insultify_last_word(message_text, use_yo=True))
 
