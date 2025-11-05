@@ -155,6 +155,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif TRIGGER_PHRASE_BASH in message_text:
         logger.info(f"Триггер 'ржака' сработал в чате {update.message.chat.id}")
         quote = get_random_quote()
+        quote = re.sub(r"(?i)<br\s*/?>", "**", quote)
         await update.message.reply_text(quote)
 
     elif TRIGGER_PHRASE_BANYA in message_text:
