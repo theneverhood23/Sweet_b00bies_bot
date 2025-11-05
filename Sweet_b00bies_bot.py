@@ -158,7 +158,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(quote)
 
     elif TRIGGER_PHRASE_BANYA in message_text:
-        await update.message.reply_text("мб лучше в сахар?")
+        await update.message.reply_text("джуджулка выросла что ли? похвастаться хочешь?")
 
     elif random.random() < 0.2:
          await update.message.reply_text(insultify_last_word(message_text, use_yo=True))
