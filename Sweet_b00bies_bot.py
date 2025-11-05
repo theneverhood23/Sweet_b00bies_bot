@@ -156,7 +156,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         quote = get_random_quote()
         await update.message.reply_text(quote)
 
-    if random.random() < 0.7:
+    elif random.random() < 0.7:
          await update.message.reply_text(insultify_last_word(text, use_yo=True))
 
 
