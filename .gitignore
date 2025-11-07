@@ -1,2 +1,5 @@
 /Sweet_b00bies_bot.env
 .env
+stats.db
+init_db.py
+upgrade_db.py
