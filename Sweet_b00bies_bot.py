@@ -1,5 +1,3 @@
-import datetime
-import pytz
 import os
 import logging
 import random
@@ -22,14 +20,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 
-# Константы для новой фичи
-DB_NAME = 'stats.db'
-SWEAR_WORDS = ['блять', 'пиздец', 'ебать', 'хуй', 'пидор'] # Дополни список по вкусу
-ADMIN_IDS = ['Theneverhood23'] # <-- ВАЖНО: Впиши сюда свой Telegram User ID
-CHAT_ID_FOR_STATS = -1002916490314
-TIMEZONE = pytz.timezone('Europe/Moscow')
-
-# Триггер-фразы, на которые хуй в польто будет реагировать бот (приводим к нижнему регистру)
+# Триггер-фразы, на которые будет реагировать бот (приводим к нижнему регистру)
 TRIGGER_PHRASE_BOOBS = "скинь сиськи"
 TRIGGER_PHRASE_DICK = "скинь член"
 TRIGGER_PHRASE_BASH = "скинь ржаку"
@@ -47,12 +38,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обрабатывает текстовые сообщения и реагирует на триггер-фразы."""
-    if not update.message or not update.message.text or update.message.from_user.is_bot:
+    if not update.message or not update.message.text:
         return
-         # <-- НАЧАЛО НОВОГО БЛОКА: Сбор статистики -->
-    user = update.message.from_user
-    update_user_stats(user.id, user.username, update.message.text)
-    # <-- КОНЕЦ НОВОГО БЛОКА -->    
+        
     message_text = update.message.text.lower().strip()
     
     if TRIGGER_PHRASE_BOOBS in message_text:
@@ -86,204 +74,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif random.random() < 0.2:
          await update.message.reply_text(insultify_last_word(message_text, use_yo=True))
 
-def update_user_stats(user_id, username, message_text):
-    """Обновляет месячную и годовую статистику пользователя в БД."""
-    username = username or f"User_{user_id}"
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM user_stats WHERE user_id = ?", (user_id,))
-    if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO user_stats (user_id, username) VALUES (?, ?)", (user_id, username))
-
-
-    # Проверяем, есть ли пользователь в базе
-    cursor.execute("SELECT * FROM user_stats WHERE user_id = ?", (user_id,))
-    if cursor.fetchone() is None:
-        # Если нет - добавляем
-        cursor.execute("INSERT INTO user_stats (user_id, username) VALUES (?, ?)", (user_id, username))
-
-    # Обновляем счетчики
-    cursor.execute("""
-        UPDATE user_stats SET
-        username = ?,
-        message_count_monthly = message_count_monthly + 1,
-        message_count_yearly = message_count_yearly + 1,
-        total_chars_count_monthly = total_chars_count_monthly + ?,
-        total_chars_count_yearly = total_chars_count_yearly + ?
-        WHERE user_id = ?
-    """, (username, len(message_text), len(message_text), user_id))
-
-    # Считаем маты
-    swear_found_count = sum([1 for word in SWEAR_WORDS if word in message_text.lower()])
-    if swear_found_count > 0:
-        cursor.execute("""
-            UPDATE user_stats SET 
-            swear_count_monthly = swear_count_monthly + ?,
-            swear_count_yearly = swear_count_yearly + ?
-            WHERE user_id = ?
-        """, (swear_found_count, swear_found_count, user_id))
-        
-    # Считаем запросы сисек
-    if TRIGGER_PHRASE_BOOBS in message_text.lower():
-        cursor.execute("""
-            UPDATE user_stats SET 
-            boobs_request_count_monthly = boobs_request_count_monthly + 1,
-            boobs_request_count_yearly = boobs_request_count_yearly + 1
-            WHERE user_id = ?
-        """, (user_id,))
-    
-    conn.commit()
-    conn.close()
-    
-## ДОБАВИТЬ ЭТИ ДВЕ ФУНКЦИИ
-def generate_stats_report(period: str) -> str:
-    """Генерирует текст отчета для заданного периода ('monthly' или 'yearly')."""
-    if period not in ['monthly', 'yearly']:
-        return "Неверный период для статистики."
-
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-
-    # Динамически подставляем нужные колонки
-    msg_col, swear_col, boobs_col, chars_col = (f"message_count_{period}", f"swear_count_{period}", 
-                                               f"boobs_request_count_{period}", f"total_chars_count_{period}")
-
-    cursor.execute(f"SELECT username, {msg_col} FROM user_stats WHERE {msg_col} > 0 ORDER BY {msg_col} ASC LIMIT 1")
-    partisan = cursor.fetchone()
-    cursor.execute(f"SELECT username, {msg_col} FROM user_stats ORDER BY {msg_col} DESC LIMIT 1")
-    maniac = cursor.fetchone()
-    cursor.execute(f"SELECT username, {swear_col} FROM user_stats ORDER BY {swear_col} DESC LIMIT 1")
-    boatswain = cursor.fetchone()
-    cursor.execute(f"SELECT username, {boobs_col} FROM user_stats ORDER BY {boobs_col} DESC LIMIT 1")
-    connoisseur = cursor.fetchone()
-    cursor.execute(f"SELECT username, CAST({chars_col} AS REAL) / {msg_col} FROM user_stats WHERE {msg_col} > 0 ORDER BY CAST({chars_col} AS REAL) / {msg_col} DESC LIMIT 1")
-    tolstoy = cursor.fetchone()
-
-    conn.close()
-    
-    title = "Статистика Месяца!" if period == 'monthly' else "Итоги Года!"
-    report = f"🏆 **{title}** 🏆\n\n"
-    if maniac: report += f"🏅 **Клавиатурный маньяк**: @{maniac[0]} (сообщений: {maniac[1]})\n"
-    if partisan: report += f"🎖️ **Партизан {('месяца' if period == 'monthly' else 'года')}**: @{partisan[0]} (сообщений: {partisan[1]})\n"
-    if boatswain and boatswain[1] > 0: report += f"🤬 **Боцман чата**: @{boatswain[0]} (ругательств: {boatswain[1]})\n"
-    if connoisseur and connoisseur[1] > 0: report += f"🧐 **Верховный ценитель**: @{connoisseur[0]} (запросов: {connoisseur[1]})\n"
-    if tolstoy: report += f"✍️ **Лев Толстой**: @{tolstoy[0]} (ср. длина сообщ.: {tolstoy[1]:.0f} симв.)\n"
-
-    return report
-
-async def post_monthly_report(context: ContextTypes.DEFAULT_TYPE):
-    """Публикует месячный отчет, переносит данные в годовой и сбрасывает месяц."""
-    logger.info("Начало ежемесячной задачи: публикация отчета.")
-    report_text = generate_stats_report('monthly')
-    report_text += "\n\nНачинаем новый месяц! Статистика за этот месяц сброшена."
-    await context.bot.send_message(chat_id=CHAT_ID_FOR_STATS, text=report_text, parse_mode='Markdown')
-    
-    # Агрегируем и сбрасываем статистику
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    # Сброс
-    cursor.execute("""
-        UPDATE user_stats SET 
-        message_count_monthly = 0, swear_count_monthly = 0, 
-        boobs_request_count_monthly = 0, total_chars_count_monthly = 0
-    """)
-    conn.commit()
-    conn.close()
-    logger.info("Ежемесячная статистика сброшена.")
-
-async def post_yearly_report(context: ContextTypes.DEFAULT_TYPE):
-    """Публикует годовой отчет."""
-    # Проверка, что сегодня действительно 31 декабря
-    now = datetime.datetime.now(TIMEZONE)
-    if now.month == 12 and now.day == 31:
-        logger.info("Начало ежегодной задачи: публикация отчета.")
-        report_text = generate_stats_report('yearly')
-        report_text += "\n\nС наступающим Новым Годом! 🥳"
-        await context.bot.send_message(chat_id=CHAT_ID_FOR_STATS, text=report_text, parse_mode='Markdown')
-
-async def send_stats_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Отправляет отчет по статистике чата."""
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-
-    # --- Получаем победителей в номинациях ---
-    # Партизан (меньше всех сообщений, но хотя бы одно)
-    cursor.execute("SELECT username, message_count FROM user_stats WHERE message_count > 0 ORDER BY message_count ASC LIMIT 1")
-    partisan = cursor.fetchone()
-    # Клавиатурный маньяк
-    cursor.execute("SELECT username, message_count FROM user_stats ORDER BY message_count DESC LIMIT 1")
-    maniac = cursor.fetchone()
-    # Боцман
-    cursor.execute("SELECT username, swear_count FROM user_stats ORDER BY swear_count DESC LIMIT 1")
-    boatswain = cursor.fetchone()
-    # Ценитель прекрасного
-    cursor.execute("SELECT username, boobs_request_count FROM user_stats ORDER BY boobs_request_count DESC LIMIT 1")
-    connoisseur = cursor.fetchone()
-    # Лев Толстой
-    cursor.execute("SELECT username, CAST(total_chars_count AS REAL) / message_count FROM user_stats WHERE message_count > 0 ORDER BY CAST(total_chars_count AS REAL) / message_count DESC LIMIT 1")
-    tolstoy = cursor.fetchone()
-
-    conn.close()
-
-    # --- Формируем красивый отчет ---
-    report = "🏆 **Статистика Месяца!** 🏆\n\n"
-    if maniac:
-        report += f"🏅 **Клавиатурный маньяк**: @{maniac[0]} (сообщений: {maniac[1]})\n"
-    if partisan:
-        report += f"🎖️ **Партизан месяца**: @{partisan[0]} (сообщений: {partisan[1]})\n"
-    if boatswain and boatswain[1] > 0:
-        report += f"🤬 **Боцман чата**: @{boatswain[0]} (ругательств: {boatswain[1]})\n"
-    if connoisseur and connoisseur[1] > 0:
-        report += f"🧐 **Верховный ценитель прекрасного**: @{connoisseur[0]} (запросов: {connoisseur[1]})\n"
-    if tolstoy:
-        report += f"✍️ **Лев Толстой этого чата**: @{tolstoy[0]} (ср. длина сообщ.: {tolstoy[1]:.0f} симв.)\n"
-
-    report += "\nПродолжаем в том же духе! Статистика сбросится в начале месяца (на самом деле когда админ напишет /resetstats 😉)."
-    await update.message.reply_text(report, parse_mode='Markdown')
-
-## ИЗМЕНИТЬ
-async def reset_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # ... проверка на админа ...
-    
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    # Обнуляем ВСЕ счетчики
-    cursor.execute("""
-        UPDATE user_stats SET 
-        message_count_monthly = 0, swear_count_monthly = 0, boobs_request_count_monthly = 0, total_chars_count_monthly = 0,
-        message_count_yearly = 0, swear_count_yearly = 0, boobs_request_count_yearly = 0, total_chars_count_yearly = 0
-    """)
-    conn.commit()
-    conn.close()
-    
-    await update.message.reply_text("✅ Внимание! ВСЯ статистика (месячная и годовая) полностью обнулена!")
 
 def main() -> None:
-    """Основная функция для запуска бота и планировщика."""
+    """Основная функция для запуска бота."""
     if not TOKEN:
-        logger.error("Токен не найден!")
+        logger.error("Токен не найден! Проверьте файл .env и переменную TELEGRAM_TOKEN.")
         return
 
     application = Application.builder().token(TOKEN).build()
-    
-    # Получаем очередь задач
-    job_queue = application.job_queue
 
-    # --- НАСТРОЙКА ПЛАНИРОВЩИКА ---
-    # Задача для ежемесячного отчета: 1-го числа каждого месяца в 14:00
-    job_queue.run_monthly(post_monthly_report, day=1, time=datetime.time(hour=14, minute=0, tzinfo=TIMEZONE))
-    
-    # Задача для ежегодного отчета: запускается каждый день в 20:00, но выполняет действие только 31 декабря
-    job_queue.run_daily(post_yearly_report, time=datetime.time(hour=20, minute=0, tzinfo=TIMEZONE))
-    
-    logger.info("Планировщик задач настроен.")
-
-    # ... регистрация всех твоих CommandHandler и MessageHandler ...
     application.add_handler(CommandHandler("start", start))
-    # и так далее
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
+
+    logger.info("Бот запущен...")
     application.run_polling()
 
 
